@@ -9,12 +9,11 @@ categories:
 - 源码分析 
 ---
 
+![](http://ww2.sinaimg.cn/large/65e4f1e6gw1fa0zxgti6jj20hs0bv405.jpg)
+
 本文主要从源码角度出发，分析MultiDex的实现原理。
 
 <!-- more -->
-
-> 出处： *[Allen's Zone](http://allenfeng.com/)*
-> 作者： *Allen Feng*
 
 ## 分析
 
