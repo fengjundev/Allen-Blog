@@ -67,8 +67,15 @@ theme: next
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
+#deploy:
+#  type: git
+#  repo: git@github.com:fengjundev/fengjundev.github.io.git
+#  branch: master
+
+
 deploy:
   type: git
-  repo: git@github.com:fengjundev/fengjundev.github.io.git
+  repository:
+      github: git@github.com:fengjundev/fengjundev.github.io.git
+      coding: git@git.coding.net:fengjundev/fengjundev.git
   branch: master
-
