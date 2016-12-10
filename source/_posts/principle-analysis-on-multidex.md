@@ -9,6 +9,8 @@ categories:
 - 源码分析 
 ---
 
+![](http://ww3.sinaimg.cn/large/006tNc79gw1falmalphm2j30dw09amy2.jpg)
+
 本文主要从源码角度出发，分析MultiDex的实现原理。
 
 <!-- more -->
