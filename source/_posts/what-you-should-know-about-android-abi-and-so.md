@@ -9,7 +9,7 @@ categories:
 - android
 ---
 
-![](http://ww3.sinaimg.cn/large/006y8mN6jw1f9hkvk9rm1j30sg0izadl.jpg)
+![](http://ww2.sinaimg.cn/large/006tNc79gw1fam13n6z7fj30dw097q54.jpg)
 
 一般情况下，我们不需要关心so。但是当APP使用的第三方SDK中包含了so文件，或者自己需要使用NDK开发某些功能，就有必要去好好了解下so的一些知识。
 
