@@ -9,7 +9,7 @@ categories:
 - java
 ---
 
-![](http://ww4.sinaimg.cn/large/006y8lVagw1fajf624hp6j30dw09awfa.jpg)
+![](http://ww3.sinaimg.cn/large/006tNc79gw1falmalphm2j30dw09amy2.jpg)
 
 Android中的对象有着4种引用类型，垃圾回收器对于不同的引用类型有着不同的处理方式，了解这些处理方式有助于我们避免写出会导致内存泄露的代码。
 

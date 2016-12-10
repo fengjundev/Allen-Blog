@@ -9,7 +9,7 @@ categories:
 - 源码分析 
 ---
 
-![](http://ww3.sinaimg.cn/large/006tNc79gw1falmalphm2j30dw09amy2.jpg)
+![](http://ww4.sinaimg.cn/large/006y8lVagw1fajf624hp6j30dw09awfa.jpg)
 
 本文主要从源码角度出发，分析MultiDex的实现原理。
 
