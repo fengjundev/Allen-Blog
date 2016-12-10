@@ -9,7 +9,7 @@ categories:
 - react native
 ---
 
-![](http://ww4.sinaimg.cn/large/65e4f1e6gw1f9gfpgaltyj21c00m8wi8.jpg)
+![](http://ww3.sinaimg.cn/large/006tNc79gw1fam15dfv4sj30dw099wgb.jpg)
 
 <!-- more -->
 
