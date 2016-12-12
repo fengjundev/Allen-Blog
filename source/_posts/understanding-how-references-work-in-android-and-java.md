@@ -175,11 +175,9 @@ private WeakReference<MainActivity> mainActivity;
 
 修改之后，当MainActivity destroy的时候，由于MyAsyncTask是通过弱引用的方式持有MainActivity，所以并不会阻止MainActivity被垃圾回收器回收，也就不会有内存泄露产生了。
 
-> 有同学可能会对此存疑：如果弱引用在MainActivity destroy之前（即MainActivity正常工作时）被回收，这样不就导致`mainActivity.get() == null`，无法更新UI了吗？
->
+> *有同学可能会对此存疑：如果弱引用在MainActivity destroy之前（即MainActivity正常工作时）被回收，这样不就导致`mainActivity.get() == null`，无法更新UI了吗？*
 > 需要注意的是，GC回收的是对象，在垃圾回收器运行的时候，如果对一个对象的**所有引用**都是弱引用的话，该对象会被回收。
-> 在MainActivity正常工作时，除了有`mainActivity`这个弱引用指向MainActivity，还会有其他强引用指向MainActivity（ActivityStack等），
-> 所以，GC扫描的时候，对于MainActivity这个对象并非都是弱引用，GC Roots与MainActivity仍然是强可达（一个对象通过一系列强引用可到达）的，所以，此时通过`mainActivity.get()`并不会返回null.
+> 在MainActivity正常工作时，除了有`mainActivity`这个弱引用指向MainActivity，还会有其他强引用指向MainActivity（ActivityStack等）。所以，GC扫描的时候，对于MainActivity这个对象并非都是弱引用，GC Roots与MainActivity仍然是强可达（一个对象通过一系列强引用可到达）的，所以，此时通过`mainActivity.get()`并不会返回null.
 
 
 ## SoftReference（软引用）
