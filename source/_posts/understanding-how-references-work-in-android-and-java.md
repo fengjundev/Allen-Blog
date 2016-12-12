@@ -58,7 +58,7 @@ Android内存的回收管理策略可以用下面的过程来展示：
 ![图自Google I/O: Memory Management for Android Apps](http://ww2.sinaimg.cn/large/006y8lVagw1fajb52zgs4j30qa0d8myd.jpg)
 
 上面三张图片描述了GC的遍历过程。
-每个圆形节点代表一个对象（内存资源），箭头表示对象引用的路径（可达路径），黄色表示遍历后的当前对象与GC Roots存在可达路径。当圆形节点与GC Roots存在可达路径的时候，表示当前对象正在被使用，GC不会将其回收。反之，若圆形节点与GC Roots不存在可达路径，意味着这个对象不再被程序引用，GC可以将之回收。
+每个圆形节点代表一个对象（内存资源），箭头表示对象引用的路径（可达路径），黄色表示遍历后的当前对象与GC Roots存在可达路径。当圆形节点与GC Roots存在可达路径的时候，表示当前对象正在被使用，GC不会将其回收。反之，若圆形节点与GC Roots不存在可达路径，意味着这个对象不再被程序引用（蓝色节点），GC可以将之回收。
 
 在Android中，每一个应用程序对应有一个单独的Dalvik虚拟机实例，而每一个Dalvik虚拟机的大小是固定的（如32M，可以通过`ActivityManager.getMemoryClass()`获得）。这意味着我们可以使用的内存不是无节制的。所以即使有着GC帮助我们回收无用内存，还是需要在开发过程中注意对内存的引用。否则，就会导致内存泄露。
 
@@ -125,7 +125,7 @@ MainActivity被销毁时，MyAsyncTask中的耗时任务可能仍没有执行完
 那么我们如何避免这样的问题出现呢？请看下文。
 
 ## WeakReference （弱引用）
-弱引用通过类[WeakReference](https://developer.android.com/reference/java/lang/ref/WeakReference.html)来表示。弱引用并不能阻止垃圾回收。如果使用一个**强引用**的话，只要该引用存在，那么被引用的对象是不能被回收的。弱引用则没有这个问题。在垃圾回收器运行的时候，如果对一个对象的所有引用都是弱引用的话，该对象会被回收。
+弱引用通过类[WeakReference](https://developer.android.com/reference/java/lang/ref/WeakReference.html)来表示。弱引用并不能阻止垃圾回收。如果使用一个**强引用**的话，只要该引用存在，那么被引用的对象是不能被回收的。弱引用则没有这个问题。**在垃圾回收器运行的时候，如果对一个对象的所有引用都是弱引用的话，该对象会被回收。**
 
 我们调整一下上面例子中的代码，使用弱引用去避免内存泄露：
 ```java
@@ -174,6 +174,13 @@ private WeakReference<MainActivity> mainActivity;
 ```
 
 修改之后，当MainActivity destroy的时候，由于MyAsyncTask是通过弱引用的方式持有MainActivity，所以并不会阻止MainActivity被垃圾回收器回收，也就不会有内存泄露产生了。
+
+> 有同学可能会对此存疑：如果弱引用在MainActivity destroy之前（即MainActivity正常工作时）被回收，这样不就导致`mainActivity.get() == null`，无法更新UI了吗？
+>
+> 需要注意的是，GC回收的是对象，在垃圾回收器运行的时候，如果对一个对象的**所有引用**都是弱引用的话，该对象会被回收。
+> 在MainActivity正常工作时，除了有`mainActivity`这个弱引用指向MainActivity，还会有其他强引用指向MainActivity（ActivityStack等），
+> 所以，GC扫描的时候，对于MainActivity这个对象并非都是弱引用，GC Roots与MainActivity仍然是强可达（一个对象通过一系列强引用可到达）的，所以，此时通过`mainActivity.get()`并不会返回null.
+
 
 ## SoftReference（软引用）
 我们可以把软引用理解成一种稍强的弱引用。使用类[SoftReference](https://developer.android.com/reference/java/lang/ref/SoftReference.html)来表示。
