@@ -529,16 +529,6 @@ public boolean performClick() {
 
 可以看到，如果设置了OnClickListener，就会回调我们的onClick方法，***最终消费事件***。
 
-此外需要注意的是，如果一个View设置了focusable且focusableInTouchMode为true时，比如，在xml中指定了：
-```xml
-...
-android:focusableInTouchMode="true"
-android:focusable="true"
-...
-```
-
-对于View的第一次点击会先去获取焦点，不会去执行`performClick()`方法，即不会回调onClick方法；在第二次点击的时候才会回调onClick。
-
 ## 总结
 
 通过上面的源码解析，我们可以总结出事件分发的整体流程了：
