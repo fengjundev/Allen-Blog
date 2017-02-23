@@ -549,5 +549,3 @@ public boolean performClick() {
 若事件在自上而下的传递过程中一直没有被消费，而且最底层的子View也没有对其进行消费，事件会**反向**向上传递，此时，父`ViewGroup`可以对事件进行消费，若仍然没有被消费的话，最后会回到Activity的`onTouchEvent`。
 
 如果一个子View没有消费`ACTION_DOWN`类型的事件，那么事件将会被另一个子View或者ViewGroup自己消费，之后的事件都只会传递给目标子View（mFirstTouchTarget）或者ViewGroup自身。简单来说，就是如果一个View没有消费`ACTION_DOWN`事件，后续事件也不会传递进来。
-
-感谢阅读，任何不足或者疑问欢迎提出讨论！
