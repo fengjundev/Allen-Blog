@@ -10,7 +10,7 @@ categories:
 
 ![](https://ww2.sinaimg.cn/large/006tNbRwgy1fczcvg0sbnj30dw099di1.jpg)
 
-触摸事件传递机制是Android中一块比较重要的知识体系，了解并熟悉整套的传递机制有助于更好的分析各种点击滑动失效问题，更好去扩展控件的事件功能和开发自定义控件。
+触摸事件传递机制是Android中一块比较重要的知识体系，了解并熟悉整套的传递机制有助于更好的分析各种滑动冲突、滑动失效问题，更好去扩展控件的事件功能和开发自定义控件。
 
 <!-- more -->
 
@@ -19,20 +19,20 @@ categories:
 
 ## 预备知识
 ### MotionEvent
-在Android设备中，触摸事件可能来自手指、触控笔、鼠标或者轨迹球。事件主要包括点按、长按、拖拽、滑动等，点按又包括单击和双击，另外还包括单指操作和多指操作等，一个最简单的用户触摸事件一般经过以下几个流程：
+在Android设备中，触摸事件主要包括点按、长按、拖拽、滑动等，点按又包括单击和双击，另外还包括单指操作和多指操作等。一个最简单的用户触摸事件一般经过以下几个流程：
 - 手指按下
 - 手指滑动
 - 手指抬起
 
-Android把这些事件抽象为`MotionEvent`这一概念，MotionEvent包含了触摸的坐标位置，点按的数量(手指的数量)，时间点等信息，用于描述用户当前的具体动作，常见的MotionEvent有下面几种类型：
+Android把这些事件的每一步抽象为`MotionEvent`这一概念，MotionEvent包含了触摸的坐标位置，点按的数量(手指的数量)，时间点等信息，用于描述用户当前的具体动作，常见的MotionEvent有下面几种类型：
 - `ACTION_DOWN`
 - `ACTION_UP`
 - `ACTION_MOVE`
 - `ACTION_CANCEL`
 
-其中，`ACTION_DOWN`、`ACTION_MOVE`、`ACTION_UP`就分别对应于上面的按下、滑动、抬起操作，即一个最简单的用户操作包含了一个`ACTION_DOWN`事件，若干个`ACTION_MOVE`事件和一个`ACTION_UP`事件。
+其中，`ACTION_DOWN`、`ACTION_MOVE`、`ACTION_UP`就分别对应于上面的手指按下、手指滑动、手指抬起操作，即一个最简单的用户操作包含了一个`ACTION_DOWN`事件，若干个`ACTION_MOVE`事件和一个`ACTION_UP`事件。
 
-### 主要方法
+### 几个方法
 事件分发过程中，涉及的主要方法有以下几个：
 
 - `dispatchTouchEvent`: 用于事件的分发，所有的事件都要通过此方法进行分发，决定是自己对事件进行消费还是交由子View处理
@@ -40,7 +40,6 @@ Android把这些事件抽象为`MotionEvent`这一概念，MotionEvent包含了�
 - `onInterceptTouchEvent`: 是`ViewGroup`中独有的方法，若返回`true`表示拦截当前事件，交由自己的`onTouchEvent()`进行处理，返回`false`表示不拦截
 
 我们的源码分析也主要围绕这几个方法展开。
-
 
 ## 源码分析
 
@@ -60,9 +59,9 @@ public boolean dispatchTouchEvent(MotionEvent ev) {
 }
 ```
 
-首先判断当前触摸事件的类型，如果是`ACTION_DOWN`事件，会触发`onUserInteraction`方法，根据注释，当有任意一个按键、触屏或者轨迹球事件发生时，栈顶Activity的`onUserInteraction`会被触发。如果我们需要知道用户是不是正在和设备交互，可以在子类中重写这个方法，去获取通知（比如取消屏保这个场景）。
+这个方法首先会判断当前触摸事件的类型，如果是`ACTION_DOWN`事件，会触发`onUserInteraction`方法。根据文档注释，当有任意一个按键、触屏或者轨迹球事件发生时，栈顶Activity的`onUserInteraction`会被触发。如果我们需要知道用户是不是正在和设备交互，可以在子类中重写这个方法，去获取通知（比如取消屏保这个场景）。
 
-然后是调用Activity内部mWindow的superDispatchTouchEvent方法，mWindow其实是PhoneWindow的实例，跟进去看看：
+然后是调用Activity内部`mWindow`的`superDispatchTouchEvent`方法，`mWindow`其实是`PhoneWindow的`实例，我们看看这个方法做了什么：
 
 ```java
 public class PhoneWindow extends Window implements MenuBuilder.Callback {
@@ -89,9 +88,9 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 }
 ```
 
-DecorView其实是FrameLayout的子类，FrameLayout并没有重写dispatchTouchEvent方法，所以事件开始交由ViewGroup的dispatchTouchEvent开始分发了，将在下一节分析。
+原来PhoneWindow内部调用了DecorView的同名方法，而DecorView其实是FrameLayout的子类，FrameLayout并没有重写dispatchTouchEvent方法，所以事件开始交由ViewGroup的dispatchTouchEvent开始分发了，这个方法将在下一节分析。
 
-注意到当`getWindow().superDispatchTouchEvent(ev)`为false时，即事件没有被任何子View消费时，最终会执行Activity的
+我们回到Activity的`dispatchTouchEvent`方法，注意当`getWindow().superDispatchTouchEvent(ev)`这一语句返回false时，即事件没有被任何子View消费时，最终会执行Activity的`onTouchEvent`：
 
 ```java
 public boolean onTouchEvent(MotionEvent event) {
@@ -105,11 +104,11 @@ public boolean onTouchEvent(MotionEvent event) {
 ```
 
 > 小结：
-事件从Activity的dispatchTouchEvent开始，经由DecorView（ViewGroup）向下传递，交由子View处理，若事件未被任何Activity的子View处理，将由Activity自己处理。
+事件从Activity的dispatchTouchEvent开始，经由DecorView开始向下传递，交由子View处理，若事件未被任何Activity的子View处理，将由Activity自己处理。
 
 ### ViewGroup
 
-接上节，事件来到DecorView后，经过层层调用，来到了ViewGroup的dispatchTouchEvent:
+由上节分析可知，事件来到DecorView后，经过层层调用，来到了ViewGroup的dispatchTouchEvent方法中:
 
 ```java
 @Override
@@ -268,7 +267,7 @@ private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,
         }
 
         return handled;
- }
+}
 
 public boolean onInterceptTouchEvent(MotionEvent ev) {
     // 默认不拦截事件
@@ -276,10 +275,12 @@ public boolean onInterceptTouchEvent(MotionEvent ev) {
 }
 ```
 
-这个方法比较长，把握住主要脉络，修枝剪叶后还是非常清晰的：
+这个方法比较长，只要把握住主要脉络，修枝剪叶后还是非常清晰的：
 
-1. 判断事件是够需要被拦截
-首先会根据mGroupFlags判断是否可以执行onInterceptTouchEvent方法，它的值是通过requestDisallowInterceptTouchEvent方法设置的：
+**(1) 判断事件是够需要被ViewGroup拦截**
+
+首先会根据`mGroupFlags`判断是否可以执行`onInterceptTouchEvent`方法，它的值可以通过`requestDisallowInterceptTouchEvent`方法设置：
+
 ```java
 public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
 
@@ -296,46 +297,45 @@ public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
 
     // Pass it up to our parent
     if (mParent != null) {
-        // 层层向上传递
+        // 层层向上传递，告知所有父View不拦截事件
         mParent.requestDisallowInterceptTouchEvent(disallowIntercept);
     }
 }
 ```
 
-所以可以从子View中调用父View的requestDisallowInterceptTouchEvent方法，阻止父View拦截事件。
+所以我们在处理某些滑动冲突场景时，可以从子View中调用父View的`requestDisallowInterceptTouchEvent`方法，阻止父View拦截事件。
 
 如果view没有设置`FLAG_DISALLOW_INTERCEPT`，就可以进入onInterceptTouchEvent方法，判断是否应该被自己拦截，
-而ViewGroup的onInterceptTouchEvent直接返回了false，即默认是不拦截事件的，ViewGroup的子类可以重写这个方法，内部判断拦截逻辑。
+ViewGroup的onInterceptTouchEvent直接返回了false，即默认是不拦截事件的，ViewGroup的子类可以重写这个方法，内部判断拦截逻辑。
 
-注意只有当事件类型是`ACTION_DOWN`或者mFirstTouchTarget不为空时，才会走*是否需要拦截事件*这一判断，如果事件是ACTION_DOWN的后续事件（如`ACTION_MOVE`等），且没有目标子View时，事件将会直接被拦截，交给ViewGroup自己处理。mFirstTouchTarget的赋值会在下一节提到。
+**注意：**只有当事件类型是`ACTION_DOWN`或者mFirstTouchTarget不为空时，才会走*是否需要拦截事件*这一判断，如果事件是`ACTION_DOWN`的后续事件（如`ACTION_MOVE`、`ACTION_UP`等），且在传递`ACTION_DOWN`事件过程中没有找到目标子View时，事件将会直接被拦截，交给ViewGroup自己处理。mFirstTouchTarget的赋值会在下一节提到。
 
+**(2) 遍历所有子View，逐个分发事件：**
 
-2. 遍历所有子View，逐个分发事件：
-
-这里需要特别注意，执行遍历分发的条件是：当前事件是MotionEvent.ACTION_DOWN、MotionEvent.ACTION_POINTER_DOWN或者MotionEvent.ACTION_HOVER_MOVE三种类型中的一个（后两种用的比较少，暂且忽略）。所以如果事件是`MotionEvent.ACTION_DOWN`的后续事件，如`ACTION_UP`事件，将不会进入遍历流程！
+执行遍历分发的条件是：当前事件是`ACTION_DOWN`、`ACTION_POINTER_DOWN`或者`ACTION_HOVER_MOVE`三种类型中的一个（后两种用的比较少，暂且忽略）。所以，如果事件是`ACTION_DOWN`的后续事件，如`ACTION_UP`事件，将不会进入遍历流程！
 
 进入遍历流程后，拿到一个子View，首先会判断触摸点是不是在子View范围内，如果不是直接跳过该子View；
-否则通过dispatchTransformedTouchEvent方法，间接调用`child.dispatchTouchEvent`达到传递的目的；
+否则通过`dispatchTransformedTouchEvent`方法，间接调用`child.dispatchTouchEvent`达到传递的目的；
 
-如果dispatchTransformedTouchEvent返回true，即事件被子View消费，就会把mFirstTouchTarget设置为child，即不为null，将alreadyDispatchedToNewTouchTarget设置为true，并跳出循环，事件不再继续传递给其他子View。
+如果`dispatchTransformedTouchEvent`返回true，即事件被子View消费，就会把mFirstTouchTarget设置为child，即不为null，并将alreadyDispatchedToNewTouchTarget设置为true，然后跳出循环，事件不再继续传递给其他子View。
 
-可以理解为，这一步的主要作用是找到一个需要消费事件的子View，我们可以称之为`目标子View`，执行第一次事件传递，并把mFirstTouchTarget设置为这个目标子View
+可以理解为，这一步的主要作用是，在事件的开始，即传递`ACTION_DOWN`事件过程中，找到一个需要消费事件的子View，我们可以称之为`目标子View`，执行第一次事件传递，并把mFirstTouchTarget设置为这个目标子View
 
-3. 将事件交给ViewGroup自己或者目标子View处理：
+**(3) 将事件交给ViewGroup自己或者目标子View处理**
 
-经过上面一步后，如果mFirstTouchTarget仍然为空，说明没有任何一个子View消费事件，将会调用dispatchTransformedTouchEvent，注意这个方法的`View child`参数为null，调用的其实是`super.dispatchTouchEvent(event)`，即事件交给ViewGroup自己处理。ViewGroup是View的子View，所以事件将会来到View的dispatchTouchEvent(event)方法判断是否消费事件。
+经过上面一步后，如果mFirstTouchTarget仍然为空，说明没有任何一个子View消费事件，将同样会调用dispatchTransformedTouchEvent，但此时这个方法的`View child`参数为null，所以调用的其实是`super.dispatchTouchEvent(event)`，即事件交给ViewGroup自己处理。ViewGroup是View的子View，所以事件将会使用View的dispatchTouchEvent(event)方法判断是否消费事件。
 
-如果mFirstTouchTarget不为null，说明存在目标子View需要处理事件，此时，`MotionEvent.ACTION_DOWN`的后续事件，如`ACTION_UP`等事件，都会传递至mFirstTouchTarget中保存的目标子View中。这里面还有一个小细节，如果在上一节遍历过程中已经把本次事件传递给子View，alreadyDispatchedToNewTouchTarget的值会被设置为true，代码会判断alreadyDispatchedToNewTouchTarget的值，避免做重复分发。
+反之，如果mFirstTouchTarget不为null，说明上一次事件传递时，找到了需要处理事件的目标子View，此时，`ACTION_DOWN`的后续事件，如`ACTION_UP`等事件，都会传递至mFirstTouchTarget中保存的目标子View中。这里面还有一个小细节，如果在上一节遍历过程中已经把本次事件传递给子View，alreadyDispatchedToNewTouchTarget的值会被设置为true，代码会判断alreadyDispatchedToNewTouchTarget的值，避免做重复分发。
 
 > 小结：
-首先判断事件是否需要被拦截，如果需要拦截会调用`onInterceptTouchEvent`，若该方法返回true，事件由ViewGroup自己处理，不在继续传递。
-若事件未被拦截，将先遍历找出一个目标子View，后续事件也将交由目标子View处理。
-若没有目标子View，事件由ViewGroup自己处理。
-
-此外，如果一个子View没有消费`ACTION_DOWN`类型的事件，那么事件将会被另一个子View或者ViewGroup自己消费，之后的事件都只会传递给目标子View（mFirstTouchTarget）或者ViewGroup自身。简单来说，就是如果一个View没有消费`ACTION_DOWN`事件，后续事件也不会传递进来。
+>dispatchTouchEvent方法首先判断事件是否需要被拦截，如果需要拦截会调用`onInterceptTouchEvent`，若该方法返回true，事件由ViewGroup自己处理，不在继续传递。
+>若事件未被拦截，将先遍历找出一个目标子View，后续事件也将交由目标子View处理。
+>若没有目标子View，事件由ViewGroup自己处理。
+>
+>此外，如果一个子View没有消费`ACTION_DOWN`类型的事件，那么事件将会被另一个子View或者ViewGroup自己消费，之后的事件都只会传递给目标子View（mFirstTouchTarget）或者ViewGroup自身。简单来说，就是如果一个View没有消费`ACTION_DOWN`事件，后续事件也不会传递进来。
 
 ### View
-现在回头看上一节的第2、3步，不管是对子View分发事件，还是将事件分发给ViewGroup自身，最后都殊途同归，调用到了View的dispatchTouchEvent(event)，这也是我们这一节分析的目标。
+现在回头看上一节的第2、3步，不管是对子View分发事件，还是将事件分发给ViewGroup自身，最后都殊途同归，调用到了View的`dispatchTouchEvent`，这就是我们这一节分析的目标。
 
 ```java
 public boolean dispatchTouchEvent(MotionEvent event) {
@@ -364,10 +364,10 @@ public boolean dispatchTouchEvent(MotionEvent event) {
 
 代码量不多，主要做了三件事：
 1. 若View设置了OnTouchListener，且处于enable状态时，会先调用mOnTouchListener的onTouch方法
-2. 若onTouch未消费事件，事件传递给onTouchEvent方法继续处理
+2. 若onTouch返回false，事件传递给`onTouchEvent`方法继续处理
 3. 若最后onTouchEvent也没有消费这个事件，将返回false，告知上层parent将事件给其他兄弟View
 
-继续跟进到onTouchEvent：
+这样，我们的分析转到了View的`onTouchEvent`方法：
 ```java
 public boolean onTouchEvent(MotionEvent event) {
     final int viewFlags = mViewFlags;
@@ -507,7 +507,7 @@ public final boolean isFocusableInTouchMode() {
 }
 ```
 
-onTouchEvent主要流程如下：
+`onTouchEvent`方法的主要流程如下：
 1. 如果一个View处于DISABLED状态，但是CLICKABLE或者LONG_CLICKABLE的话，这个View仍然能消费事件，只是不会再走下面的流程;
 2. 如果View是enable的且处于可点击状态，事件将被这个View消费：
 在方法返回前，onTouchEvent会根据MotionEvent的不同类型做出不同响应，如调用refreshDrawableState()去设置View的按下效果和抬起效果等。
@@ -531,11 +531,11 @@ public boolean performClick() {
 
 ## 总结
 
-通过上面的源码解析，我们可以总结出事件分发的整体流程了：
+通过上面的源码解析，我们可以总结出事件分发的整体流程：
 
 ![事件传递流程](http://ww1.sinaimg.cn/large/72f96cbagw1f9aljfns45j20nv15on04.jpg)
 
-下面基于这个流程图做一个总体概括：
+下面做一个总体概括：
 
 事件由Activity的`dispatchTouchEvent()`开始，将事件传递给当前Activity的根ViewGroup：mDecorView，事件开始自上而下进行传递，直至被消费。
 
