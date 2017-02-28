@@ -1,5 +1,5 @@
 ---
-title: 理解Android中的LayoutInflater
+title: Android LayoutInflater源码解析
 date: 2017-02-24 14:54:56
 tags:
 - android
